@@ -18,9 +18,9 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install MLflow
+    - name: Install dependencies
       run: |
-        pip install mlflow
+        pip install mlflow scikit-learn pandas matplotlib
 
     - name: Run MLflow Project
       run: |
@@ -32,14 +32,16 @@ jobs:
         name: mlflow-artifacts
         path: mlruns
 
-        - name: Build Docker Image (MLflow)
+    - name: Build Docker Image (MLflow)
       run: |
         mlflow models build-docker \
           -m "runs:/$(ls mlruns/*/* | head -n 1)" \
           -n ${{ secrets.DOCKER_USERNAME }}/traffic-volume-ml
 
     - name: Login Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+        -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
     - name: Push Docker Image
       run: |
