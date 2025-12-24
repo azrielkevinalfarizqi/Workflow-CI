@@ -1,102 +1,33 @@
-name: CI/CD - Traffic Volume Model Training
+name: CI - MLflow Training
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'MLProject/**'
-  pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-# =========================
-# JOB 1: TRAIN MODEL
-# =========================
-  train-model:
+  train:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
-      
+          python-version: '3.12'
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install mlflow scikit-learn pandas matplotlib joblib numpy
-      
-      - name: Verify dataset exists
-        run: |
-          if [ ! -f "MLProject/Metro_Interstate_Traffic_Volume_preprocessing.csv" ]; then
-            echo "Dataset not found!"
-            exit 1
-          fi
-          echo "Dataset found"
-          ls -lh MLProject/
-      
-      - name: Run MLflow Project
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run MLflow Project (NO CONDA)
         run: |
           cd MLProject
           mlflow run . --env-manager=local
-      
-      - name: Verify MLflow artifacts
-        run: |
-          if [ -d "MLProject/mlruns" ]; then
-            echo "MLflow artifacts created"
-            find MLProject/mlruns -type f | head -20
-          else
-            echo "No MLflow artifacts found"
-            exit 1
-          fi
-      
-      - name: Upload MLflow artifacts
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mlflow-artifacts-${{ github.sha }}
-          path: MLProject/mlruns/
-          retention-days: 90
-
-# =========================
-# JOB 2: BUILD DOCKER IMAGE (MLFLOW)
-# =========================
-  build-docker:
-    needs: train-model
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: azri528
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Build Docker Image using MLflow
-        run: |
-          cd MLProject
-          mlflow models build-docker \
-            -m "runs:/$(ls mlruns/*/* | head -n 1)" \
-            -n azri528/traffic-volume-ml
-      
-      - name: Push Docker Image
-        run: |
-          docker push azri528/traffic-volume-ml
-      
-      - name: Docker image pushed
-        run: |
-          echo "======================================"
-          echo "Docker image pushed to Docker Hub!"
-          echo "Image: azri528/traffic-volume-ml"
-          echo "======================================"
+          name: mlruns
+          path: MLProject/mlruns
