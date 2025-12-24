@@ -25,10 +25,10 @@ jobs:
           pip install --upgrade pip
           pip install pandas numpy scikit-learn mlflow matplotlib
 
-      - name: Run MLflow Project
+      - name: Run Modelling.py directly (safe MLflow)
         run: |
           cd MLProject
-          mlflow run . --env-manager=local
+          python Modelling.py
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
@@ -42,10 +42,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image from MLflow project
+      - name: Build Docker image from MLProject
         run: |
           cd MLProject
-          mlflow build-docker . -t traffic-volume:latest
+          docker build -t traffic-volume:latest .
 
       - name: Push Docker image
         run: |
