@@ -1,0 +1,13 @@
+name: traffic-volume-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - mlflow
+      - scikit-learn
+      - pandas
+      - matplotlib
+      - joblib
+      - numpy
