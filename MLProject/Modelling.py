@@ -9,15 +9,16 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, r2_score
 
+
 # =====================
 # MAIN (WAJIB UNTUK MLFLOW PROJECT)
 # =====================
 if __name__ == "__main__":
 
     # =====================
-    # LOAD DATA (RELATIVE PATH - CI SAFE)
+    # PATH & DATA LOAD (CI SAFE)
     # =====================
-    base_dir = os.path.dirname(__file__)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     csv_path = os.path.join(
         base_dir,
         "Metro_Interstate_Traffic_Volume_preprocessing.csv"
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     data = pd.read_csv(csv_path)
 
     # =====================
-    # FEATURE ENGINEERING WAKTU
+    # FEATURE ENGINEERING
     # =====================
     data["date_time"] = pd.to_datetime(data["date_time"])
     data["hour"] = data["date_time"].dt.hour
@@ -41,10 +42,13 @@ if __name__ == "__main__":
     )
 
     # =====================
-    # MLFLOW SETUP
-    # (LOCAL / CI FRIENDLY)
+    # MLFLOW SETUP (CI AMAN)
     # =====================
+    mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("Traffic Volume Regression - Baseline")
+
+    # 🔴 FIX WAJIB UNTUK CI
+    mlflow.end_run()
 
     os.makedirs("plots", exist_ok=True)
 
@@ -66,25 +70,21 @@ if __name__ == "__main__":
     }
 
     # =====================
-    # TRAIN & LOG MODELS
+    # TRAIN & LOG
     # =====================
     for name, model in models.items():
         with mlflow.start_run(run_name=name):
 
-            # TRAIN
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
-            # METRICS (AMAN SEMUA VERSI SKLEARN)
             rmse = mean_squared_error(y_test, y_pred) ** 0.5
             r2 = r2_score(y_test, y_pred)
 
             mlflow.log_metric("rmse", rmse)
             mlflow.log_metric("r2", r2)
 
-            # =====================
             # VISUALIZATION
-            # =====================
             plt.figure(figsize=(6, 4))
             plt.scatter(y_test, y_pred, alpha=0.3)
             plt.xlabel("Actual Traffic Volume")
@@ -95,13 +95,10 @@ if __name__ == "__main__":
             plt.savefig(plot_path)
             plt.close()
 
-            # =====================
-            # LOG ARTIFACT & MODEL
-            # =====================
             mlflow.log_artifact(plot_path)
 
             mlflow.sklearn.log_model(
-                sk_model=model,
+                model,
                 artifact_path=f"{name}_model"
             )
 
