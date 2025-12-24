@@ -1,54 +1,40 @@
-name: CI - MLflow Training & Docker
+name: CI - MLflow Training & Artifact Upload
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "MLProject/**"
-  workflow_dispatch:
+    branches: [main]           # otomatis jalan saat push ke main
+  workflow_dispatch:           # bisa dijalankan manual
 
 jobs:
-  train-and-docker:
+  train-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      # 2️⃣ Setup Python
+      - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      # 3️⃣ Install dependencies
+      - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install pandas numpy matplotlib mlflow
-          pip install scikit-learn>=1.2.2
+          pip install "scikit-learn>=1.2.2"
 
-      - name: Run Modelling.py directly (safe MLflow)
-        run: |
-          cd MLProject
-          python Modelling.py
+      # 4️⃣ Run Modelling.py langsung
+      - name: Run Modelling.py
+        working-directory: MLProject
+        run: python Modelling.py
 
+      # 5️⃣ Upload MLflow artifacts
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts
           path: MLProject/mlruns
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker image from MLProject
-        run: |
-          cd MLProject
-          docker build -t traffic-volume:latest .
-
-      - name: Push Docker image
-        run: |
-          docker tag traffic-volume:latest ${{ secrets.DOCKER_USERNAME }}/traffic-volume:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/traffic-volume:latest
