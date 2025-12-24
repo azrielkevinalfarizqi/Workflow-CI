@@ -3,6 +3,8 @@ name: CI - MLflow Training
 on:
   push:
     branches: [main]
+    paths:
+      - "MLProject/**"
   workflow_dispatch:
 
 jobs:
@@ -10,24 +12,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install dependencies (langsung, no requirements)
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pandas numpy scikit-learn mlflow matplotlib
 
       - name: Run MLflow Project (NO CONDA)
         run: |
           cd MLProject
           mlflow run . --env-manager=local
 
-      - name: Upload artifacts
+      - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mlruns
+          name: mlflow-artifacts
           path: MLProject/mlruns
