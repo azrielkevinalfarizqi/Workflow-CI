@@ -2,7 +2,7 @@ name: MLflow CI Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -21,17 +21,23 @@ jobs:
     - name: Install MLflow
       run: pip install mlflow
 
-    - name: Debug files
-      run: |
-        ls -la
-        cat MLProject
-
     - name: Run MLflow Project
-      run: |
-        mlflow run .
+      run: mlflow run MLProject
 
     - name: Upload MLflow artifacts
       uses: actions/upload-artifact@v4
       with:
         name: mlflow-artifacts
         path: mlruns
+
+    - name: Build Docker Image (MLflow)
+      run: |
+        mlflow models build-docker \
+          -m "runs:/$(ls mlruns/*/* | head -n 1)" \
+          -n azri528/traffic-volume-ml
+
+    - name: Login Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u azri528 --password-stdin
+
+    - name: Push Docker Image
+      run: docker push azri528/traffic-volume-ml
