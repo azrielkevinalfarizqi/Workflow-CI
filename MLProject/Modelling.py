@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # PATH & DATA LOAD
     # =====================
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_path = os.path.join(base_dir, "namadataset_preprocessing", "Metro_Interstate_Traffic_Volume_preprocessing.csv")
+    csv_path = os.path.join(base_dir, "Metro_Interstate_Traffic_Volume_preprocessing.csv")
     data = pd.read_csv(csv_path)
 
     # =====================
