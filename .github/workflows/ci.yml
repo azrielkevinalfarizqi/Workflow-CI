@@ -23,7 +23,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pandas numpy scikit-learn mlflow matplotlib
+          pip install pandas numpy matplotlib mlflow
+          pip install scikit-learn>=1.2.2
 
       - name: Run Modelling.py directly (safe MLflow)
         run: |
