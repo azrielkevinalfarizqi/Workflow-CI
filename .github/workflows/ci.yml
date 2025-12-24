@@ -18,18 +18,29 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install MLflow
-      run: pip install mlflow
+    - name: Install dependencies
+      run: |
+        pip install mlflow scikit-learn pandas matplotlib joblib numpy
 
+    # =====================
+    # RUN MLFLOW PROJECT
+    # =====================
     - name: Run MLflow Project
-      run: mlflow run MLProject --env-manager=local
+      run: |
+        mlflow run MLProject
 
-    - name: Upload MLflow artifacts
+    # =====================
+    # SAVE ARTEFACT (SKILLED)
+    # =====================
+    - name: Upload MLflow Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: mlflow-artifacts
         path: mlruns
 
+    # =====================
+    # BUILD DOCKER IMAGE (ADVANCE)
+    # =====================
     - name: Build Docker Image (MLflow)
       run: |
         mlflow models build-docker \
@@ -40,4 +51,5 @@ jobs:
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u azri528 --password-stdin
 
     - name: Push Docker Image
-      run: docker push azri528/traffic-volume-ml
+      run: |
+        docker push azri528/traffic-volume-ml
