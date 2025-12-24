@@ -39,7 +39,8 @@ if __name__ == "__main__":
     # =====================
     # MLFLOW SETUP
     # =====================
-    mlruns_path = os.path.join(base_dir, "mlruns")
+    mlruns_path = os.path.join(base_dir, "mlruns")  # ABSOLUTE PATH
+    os.makedirs(mlruns_path, exist_ok=True)
     mlflow.set_tracking_uri(f"file://{mlruns_path}")
     mlflow.set_experiment("Traffic Volume Regression - Baseline")
 
@@ -49,8 +50,17 @@ if __name__ == "__main__":
     # DEFINE MODELS
     # =====================
     models = {
-        "RandomForest_Baseline": RandomForestRegressor(n_estimators=200, random_state=42, n_jobs=-1),
-        "SVR_Baseline": SVR(kernel="rbf", C=100, gamma=0.1, epsilon=0.1)
+        "RandomForest_Baseline": RandomForestRegressor(
+            n_estimators=200,
+            random_state=42,
+            n_jobs=-1
+        ),
+        "SVR_Baseline": SVR(
+            kernel="rbf",
+            C=100,
+            gamma=0.1,
+            epsilon=0.1
+        )
     }
 
     # =====================
@@ -59,6 +69,7 @@ if __name__ == "__main__":
     for name, model in models.items():
         with mlflow.start_run(run_name=name):
             mlflow.log_params(model.get_params())
+
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
@@ -67,17 +78,18 @@ if __name__ == "__main__":
             mlflow.log_metric("rmse", rmse)
             mlflow.log_metric("r2", r2)
 
-            # plot actual vs predicted
+            # Plot actual vs predicted
+            plot_path = os.path.join(base_dir, "plots", f"{name}_actual_vs_pred.png")
             plt.figure(figsize=(6, 4))
             plt.scatter(y_test, y_pred, alpha=0.3)
             plt.xlabel("Actual Traffic Volume")
             plt.ylabel("Predicted Traffic Volume")
             plt.title(f"{name}: Actual vs Predicted")
-            plot_path = os.path.join(base_dir, "plots", f"{name}_actual_vs_pred.png")
             plt.savefig(plot_path)
             plt.close()
             mlflow.log_artifact(plot_path)
 
+            # Log model
             mlflow.sklearn.log_model(model, artifact_path=f"{name}_model")
 
             print(f"[INFO] {name} -> RMSE: {rmse:.2f}, R2: {r2:.4f}")
