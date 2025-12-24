@@ -11,19 +11,10 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 if __name__ == "__main__":
     # =====================
-    # PATH & DATA LOAD
+    # PATH & DATA LOAD (SIMPLE)
     # =====================
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Dataset berada langsung di folder MLProject
+    base_dir = os.path.dirname(__file__)
     csv_path = os.path.join(base_dir, "Metro_Interstate_Traffic_Volume_preprocessing.csv")
-
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(
-            f"Dataset not found: {csv_path}. "
-            "Pastikan CSV berada di folder MLProject/"
-        )
-
     data = pd.read_csv(csv_path)
 
     # =====================
@@ -44,7 +35,7 @@ if __name__ == "__main__":
     # =====================
     # MLFLOW SETUP
     # =====================
-    mlflow.set_tracking_uri("file:mlruns")  # Simpan mlruns relatif ke folder MLProject
+    mlflow.set_tracking_uri("file:mlruns")
     mlflow.set_experiment("Traffic Volume Regression - Baseline")
 
     os.makedirs("plots", exist_ok=True)
@@ -71,20 +62,15 @@ if __name__ == "__main__":
     # =====================
     for name, model in models.items():
         with mlflow.start_run(run_name=name):
-            # log hyperparameters
             mlflow.log_params(model.get_params())
-
-            # train model
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
-            # metrics
             rmse = mean_squared_error(y_test, y_pred, squared=False)
             r2 = r2_score(y_test, y_pred)
             mlflow.log_metric("rmse", rmse)
             mlflow.log_metric("r2", r2)
 
-            # plot actual vs predicted
             plt.figure(figsize=(6, 4))
             plt.scatter(y_test, y_pred, alpha=0.3)
             plt.xlabel("Actual Traffic Volume")
@@ -95,7 +81,6 @@ if __name__ == "__main__":
             plt.close()
             mlflow.log_artifact(plot_path)
 
-            # log model
             mlflow.sklearn.log_model(model, artifact_path=f"{name}_model")
 
             print(f"[INFO] {name} -> RMSE: {rmse:.2f}, R2: {r2:.4f}")
