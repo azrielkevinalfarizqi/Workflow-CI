@@ -9,21 +9,13 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, r2_score
 
-
-# =====================
-# MAIN (WAJIB UNTUK MLFLOW PROJECT)
-# =====================
 if __name__ == "__main__":
 
     # =====================
-    # PATH & DATA LOAD (CI SAFE)
+    # PATH & DATA LOAD
     # =====================
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_path = os.path.join(
-        base_dir,
-        "Metro_Interstate_Traffic_Volume_preprocessing.csv"
-    )
-
+    csv_path = os.path.join(base_dir, "namadataset_preprocessing", "Metro_Interstate_Traffic_Volume_preprocessing.csv")
     data = pd.read_csv(csv_path)
 
     # =====================
@@ -42,13 +34,10 @@ if __name__ == "__main__":
     )
 
     # =====================
-    # MLFLOW SETUP (CI AMAN)
+    # MLFLOW SETUP
     # =====================
-    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_tracking_uri("file:mlruns")  # path relatif untuk CI
     mlflow.set_experiment("Traffic Volume Regression - Baseline")
-
-    # 🔴 FIX WAJIB UNTUK CI
-    mlflow.end_run()
 
     os.makedirs("plots", exist_ok=True)
 
@@ -74,11 +63,14 @@ if __name__ == "__main__":
     # =====================
     for name, model in models.items():
         with mlflow.start_run(run_name=name):
+            
+            # log hyperparameter
+            mlflow.log_params(model.get_params())
 
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
-            rmse = mean_squared_error(y_test, y_pred) ** 0.5
+            rmse = mean_squared_error(y_test, y_pred, squared=False)
             r2 = r2_score(y_test, y_pred)
 
             mlflow.log_metric("rmse", rmse)
@@ -90,16 +82,11 @@ if __name__ == "__main__":
             plt.xlabel("Actual Traffic Volume")
             plt.ylabel("Predicted Traffic Volume")
             plt.title(f"{name}: Actual vs Predicted")
-
             plot_path = f"plots/{name}_actual_vs_pred.png"
             plt.savefig(plot_path)
             plt.close()
 
             mlflow.log_artifact(plot_path)
-
-            mlflow.sklearn.log_model(
-                model,
-                artifact_path=f"{name}_model"
-            )
+            mlflow.sklearn.log_model(model, artifact_path=f"{name}_model")
 
             print(f"[INFO] {name} -> RMSE: {rmse:.2f}, R2: {r2:.4f}")
